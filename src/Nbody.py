@@ -28,7 +28,7 @@ class NBody:
     
     def run(self) -> None:
         """
-        Main loop for simulatio
+        Main loop for simulation
         """
         raise NotImplementedError
 
