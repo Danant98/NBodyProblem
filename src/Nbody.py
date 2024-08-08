@@ -12,7 +12,7 @@ class nBody:
 
     def __init__(self, 
                  N: int, 
-                 max_t: int = 10, 
+                 max_t: int = 5, 
                  G: float = 6.67408e-11, 
                  screen_size: tuple = (2.0, 2.0),
                  grid_points: int = 1000,
@@ -22,7 +22,7 @@ class nBody:
                  ) -> None:
         # Number of particles, graviatational constant and total 
         self.N = N
-        self.G = 0.01
+        self.G = 0.1
         self.max_t = max_t
         self.speed_factor = speed_factor
         self.time, self.dt = np.linspace(0, max_t, time_points, retstep = True)
@@ -85,10 +85,10 @@ class nBody:
         for t in range(len(self.time)):
             plt.clf()
             for n in range(self.N):
-                plt.plot(*self.particles[t, n], 'ro')
-            plt.xlim(self.particles[:, :, 0].min() - 0.5, self.particles[:, :, 0].max() + 0.5)
-            plt.ylim(self.particles[:, :, 1].min() - 0.5, self.particles[:, :, 1].max() + 0.5)
-            plt.pause(0.05)
+                plt.plot(*self.particles[t, n], 'wo')
+            plt.xlim(self.particles[:, :, 0].min() - 1.0, self.particles[:, :, 0].max() + 1.0)
+            plt.ylim(self.particles[:, :, 1].min() - 1.0, self.particles[:, :, 1].max() + 1.0)
+            plt.pause(0.01)
         plt.show()
         
 
