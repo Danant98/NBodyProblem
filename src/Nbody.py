@@ -5,7 +5,7 @@ __author__ = 'Daniel Elisabethsønn Antonsen, UiT Arctic University of Norway'
 # Importing libraries and modules
 import numpy as np
 from itertools import combinations
-import matplotlib.pyplot as plt; plt.style.use('dark_background')
+import matplotlib.pyplot as plt
 
 
 class nBody:
@@ -13,7 +13,7 @@ class nBody:
     def __init__(self, 
                  N: int, 
                  max_t: int = 5, 
-                 G: float = 6.67408e-11, 
+                 G: float = 0.1, 
                  screen_size: tuple = (2.0, 2.0),
                  grid_points: int = 1000,
                  time_points: int = 100,
@@ -22,7 +22,7 @@ class nBody:
                  ) -> None:
         # Number of particles, graviatational constant and total 
         self.N = N
-        self.G = 0.1
+        self.G = G 
         self.max_t = max_t
         self.speed_factor = speed_factor
         self.time, self.dt = np.linspace(0, max_t, time_points, retstep = True)
@@ -81,15 +81,14 @@ class nBody:
 
             self.particles[i] = self.pos
         
-        plt.figure(figsize=(7, 7))
+        plt.figure()
         for t in range(len(self.time)):
             plt.clf()
+            plt.grid()
             for n in range(self.N):
-                plt.plot(*self.particles[t, n], 'wo')
+                plt.plot(*self.particles[t, n], 'o')
             plt.xlim(self.particles[:, :, 0].min() - 1.0, self.particles[:, :, 0].max() + 1.0)
             plt.ylim(self.particles[:, :, 1].min() - 1.0, self.particles[:, :, 1].max() + 1.0)
             plt.pause(0.01)
         plt.show()
         
-
-
