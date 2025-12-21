@@ -1,24 +1,26 @@
 #!/usr/bin/env python
 
-__author__ = 'Daniel Elisabethsønn Antonsen, UiT Arctic University of Norway'
+__author__ = 'Daniel Elisabethsønn Antonsen, Applied physics and mathematics'
 
 # Importing libraries and modules
 import numpy as np
 from itertools import combinations
 import matplotlib.pyplot as plt
-
+from Sim import simulation as sim
 
 class nBody:
 
     def __init__(self, 
                  N: int, 
-                 max_t: int = 5, 
+                 max_t: int = 10, 
                  G: float = 0.1, 
                  screen_size: tuple = (2.0, 2.0),
                  grid_points: int = 1000,
                  time_points: int = 100,
                  masses: None | list = None,
-                 speed_factor: float = 0.1
+                 speed_factor: float = 0.1,
+                 speed: None | list[list[float]] = None,
+                 pos: None | list[list[float]] = None
                  ) -> None:
         # Number of particles, graviatational constant and total 
         self.N = N
@@ -36,9 +38,8 @@ class nBody:
         self.pairs = list(combinations(range(N), 2))
 
         # Position and velocity for the different particles
-        self.pos = np.random.uniform(0.2, 0.8, size = (N, 2))
-        # self.vel = np.random.uniform(-0.5, 0.5, size = (N, 2))
-        self.vel = np.zeros((N, 2))
+        self.pos = np.random.uniform(-1.0, 1.0, size = (N, 2)) if pos == None else np.array(pos)
+        self.vel = np.random.uniform(-1.0, 1.0, size = (N, 2)) if speed == None else np.array(speed)
         if masses != None:
             assert len(masses) == N, "Masses must be specified for each of the partices"
             self.masses = masses
@@ -49,6 +50,20 @@ class nBody:
 
         # Initializing array for storing position at each time step
         self.particles = np.zeros((self.time.shape[0], N, 2))
+    
+    def compute_cm(self) -> None:
+        """
+        Compute center of mass for the system
+        """
+        total_mass = np.sum(self.masses)
+        cm = np.zeros(2)
+        for i in range(self.N):
+            cm += self.masses[i] * self.pos[i]
+        cm /= total_mass
+        # Update positions to center of mass frame
+        for i in range(self.N):
+            self.pos[i] -= cm
+        
 
     def Euler_cromer(self, body_i: int, body_j: int, ai: np.ndarray, aj: np.ndarray) -> None:
         """
@@ -80,11 +95,13 @@ class nBody:
                 self.Euler_cromer(body_i, body_j, ai, aj)
 
             self.particles[i] = self.pos
+            self.compute_cm()
         
         plt.figure()
         for t in range(len(self.time)):
             plt.clf()
             plt.grid()
+            plt.title(f'Time: {self.time[t]:.2f}')
             for n in range(self.N):
                 plt.plot(*self.particles[t, n], 'o')
             plt.xlim(self.particles[:, :, 0].min() - 1.0, self.particles[:, :, 0].max() + 1.0)
