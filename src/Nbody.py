@@ -6,7 +6,6 @@ __author__ = 'Daniel Elisabethsønn Antonsen, Applied physics and mathematics'
 import numpy as np
 from itertools import combinations
 import matplotlib.pyplot as plt
-from Sim import simulation as sim
 
 class nBody:
 
@@ -17,7 +16,7 @@ class nBody:
                  screen_size: tuple = (2.0, 2.0),
                  grid_points: int = 1000,
                  time_points: int = 100,
-                 masses: None | list = None,
+                 masses: None | list = None, 
                  speed_factor: float = 0.1,
                  speed: None | list[list[float]] = None,
                  pos: None | list[list[float]] = None
@@ -42,11 +41,9 @@ class nBody:
         self.vel = np.random.uniform(-1.0, 1.0, size = (N, 2)) if speed == None else np.array(speed)
         if masses != None:
             assert len(masses) == N, "Masses must be specified for each of the partices"
-            self.masses = masses
+            self.masses = np.array(masses)
         else:
             self.masses = np.ones(N)
-
-        # self.pos[:, 0] += 0.2; self.pos[:, 1] -= 0.2
 
         # Initializing array for storing position at each time step
         self.particles = np.zeros((self.time.shape[0], N, 2))
@@ -55,14 +52,11 @@ class nBody:
         """
         Compute center of mass for the system
         """
-        total_mass = np.sum(self.masses)
-        cm = np.zeros(2)
-        for i in range(self.N):
-            cm += self.masses[i] * self.pos[i]
-        cm /= total_mass
-        # Update positions to center of mass frame
-        for i in range(self.N):
-            self.pos[i] -= cm
+        # Compute the total mass
+        M = np.sum(self.masses)
+        # Resetting the COM position and velocity of the system
+        self.pos -= np.einsum("i, ij -> j", self.masses, self.pos) / M
+        self.vel -= np.einsum("i, ij -> j", self.masses, self.vel) / M
         
 
     def Euler_cromer(self, body_i: int, body_j: int, ai: np.ndarray, aj: np.ndarray) -> None:
