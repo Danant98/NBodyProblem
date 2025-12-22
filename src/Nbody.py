@@ -11,15 +11,13 @@ class nBody:
 
     def __init__(self, 
                  N: int, 
-                 max_t: int = 10, 
-                 G: float = 0.1, 
-                 screen_size: tuple = (2.0, 2.0),
-                 grid_points: int = 1000,
-                 time_points: int = 100,
+                 max_t: int = 365, 
+                 G: float = 2.9591220828559093e-4,  # AU^3 / (solar_mass * day^2)
+                 time_points: int = 1000,
                  masses: None | list = None, 
                  speed_factor: float = 0.1,
-                 speed: None | list[list[float]] = None,
-                 pos: None | list[list[float]] = None
+                 pos: None | list[list[float]] = None,
+                 speed: None | list[list[float]] = None
                  ) -> None:
         # Number of particles, graviatational constant and total 
         self.N = N
@@ -28,11 +26,6 @@ class nBody:
         self.speed_factor = speed_factor
         self.time, self.dt = np.linspace(0, max_t, time_points, retstep = True)
         
-        # Setting size of screen
-        self.screen_size = screen_size
-        self.x = np.linspace(0., 1., grid_points)
-        self.y = np.linspace(0., 1., grid_points)
-
         # Combinations for computing forces
         self.pairs = list(combinations(range(N), 2))
 
@@ -59,43 +52,48 @@ class nBody:
         self.vel -= np.einsum("i, ij -> j", self.masses, self.vel) / M
         
 
-    def Euler_cromer(self, body_i: int, body_j: int, ai: np.ndarray, aj: np.ndarray) -> None:
+    def Euler_cromer(self, a: np.ndarray) -> None:
         """
         Numerical scheme for updating position and velocity
         """
-        self.vel[body_i] += ai * self.dt * self.speed_factor
-        self.vel[body_j] += aj * self.dt* self.speed_factor
-
-        self.pos[body_i] += self.vel[body_i] * self.dt
-        self.pos[body_j] += self.vel[body_j] * self.dt        
-
+        self.vel = self.vel + a * self.dt
+        self.pos = self.pos + self.vel * self.dt
     
     def run(self) -> None:
         """
         Main loop for simulation
         """
         for i in range(len(self.time)):
-            # Iterating over pair of particles to update position and velocity
-            for body_i, body_j in self.pairs:
-                # Distance between particles
-                ri, rj = self.pos[body_i], self.pos[body_j]
-                r = ri - rj
-                
-                # Force from i to j
-                ai = -self.G * (self.masses[body_j]) * r / (np.linalg.norm(r)**3)
-                aj = self.G * (self.masses[body_i]) * r / (np.linalg.norm(r)**3)
+            # Creating acceleration array
+            a = np.zeros((self.N, 2))
 
-                # Updating velocity and position
-                self.Euler_cromer(body_i, body_j, ai, aj)
+            # Creating displacement matrix
+            R_ij = self.pos[:, np.newaxis, :] - self.pos[np.newaxis, :, :]
 
+            # Computing the distance
+            r_norm = np.linalg.norm(R_ij, axis = 2)
+
+            # Computing 1/r^3
+            with np.errstate(divide = 'ignore', invalid = 'ignore'):
+                inv_r_cubed = 1.0 / (r_norm * r_norm * r_norm)
+
+            # Setting diagonal elements to zero
+            np.fill_diagonal(inv_r_cubed, 0.0)
+            
+            # Computing acceleration array
+            a[:] = self.G * np.einsum("ijk, ij, i -> jk", R_ij, inv_r_cubed, self.masses)
+
+            # Computing velocity and position
+            self.Euler_cromer(a)
+
+            # Storing position
             self.particles[i] = self.pos
-            self.compute_cm()
-        
+
         plt.figure()
         for t in range(len(self.time)):
             plt.clf()
             plt.grid()
-            plt.title(f'Time: {self.time[t]:.2f}')
+            plt.title(f'Day: {self.time[t]:.2f}')
             for n in range(self.N):
                 plt.plot(*self.particles[t, n], 'o')
             plt.xlim(self.particles[:, :, 0].min() - 1.0, self.particles[:, :, 0].max() + 1.0)
