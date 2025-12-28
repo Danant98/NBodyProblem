@@ -64,12 +64,15 @@ class nBody:
         """
         Main loop for simulation
         """
+        # Center the system so the center of mass is at the origin
+        self.compute_cm()
         for i in range(len(self.time)):
             # Creating acceleration array
             a = np.zeros((self.N, 2))
 
             # Creating displacement matrix
-            R_ij = self.pos[:, np.newaxis, :] - self.pos[np.newaxis, :, :]
+            # R_ij = pos_j - pos_i for use in a_i = G * sum_j m_j * R_ij / r^3
+            R_ij = self.pos[np.newaxis, :, :] - self.pos[:, np.newaxis, :]
 
             # Computing the distance
             r_norm = np.linalg.norm(R_ij, axis = 2)
@@ -81,8 +84,8 @@ class nBody:
             # Setting diagonal elements to zero
             np.fill_diagonal(inv_r_cubed, 0.0)
             
-            # Computing acceleration array
-            a[:] = self.G * np.einsum("ijk, ij, i -> jk", R_ij, inv_r_cubed, self.masses)
+            # Computing acceleration array: a_i,k = G * sum_j R_ij,k * inv_r_cubed[i,j] * m_j
+            a[:] = self.G * np.einsum("ijk, ij, j -> ik", R_ij, inv_r_cubed, self.masses)
 
             # Computing velocity and position
             self.Euler_cromer(a)
@@ -99,7 +102,9 @@ class nBody:
         fig, ax = plt.subplots()
         ax.set_xlim(self.particles[:, :, 0].min() - 1.0, self.particles[:, :, 0].max() + 1.0)
         ax.set_ylim(self.particles[:, :, 1].min() - 1.0, self.particles[:, :, 1].max() + 1.0)
-        scat = ax.scatter([], [], c = self.colors)
+        
+        # Use a scatter plot so we can update positions for each particle separately
+        scat = ax.scatter([], [], c=self.colors, s=40)
         plt.grid(True)
         plt.xlabel(r'x (AU)')
         plt.ylabel(r'y (AU)')
@@ -109,7 +114,8 @@ class nBody:
             ax.set_title(f'Day: {self.time[frame]:.0f}, FPS {fps}')
             return scat,
 
-        ani = FuncAnimation(fig, update, frames = len(self.time), blit = True, interval = fps)
+        interval_ms = 1000.0 / fps
+        ani = FuncAnimation(fig, update, frames = len(self.time), blit = True, interval = interval_ms)
         plt.show()
 
 
