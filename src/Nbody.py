@@ -18,17 +18,25 @@ class nBody:
                  masses: None | list = None,
                  pos: None | list[list[float]] = None,
                  speed: None | list[list[float]] = None,
-                 colors: None | list[str] = None
+                 colors: None | list[str] = None,
+                 labels: None | list[str] = None,
+                 fps: int = 60
                  ) -> None:
         # Number of particles, graviatational constant and total 
         self.N = N
-        self.G = G 
+        self.G = G
         self.max_t = max_t
         self.time, self.dt = np.linspace(0, max_t, time_points, retstep = True)
+        self.fps = fps
 
-        # Colors for the different particles
+        # Colors for the different particles and labels for the legend
         diff_cols = [value for key, value in mcolors.TABLEAU_COLORS.items()]
         self.colors = np.random.choice(diff_cols, size = N) if colors == None else colors
+        self.labels = labels if labels != None else [f"Particle {i+1}" for i in range(N)]
+
+        # Checking that the number of colors and labels matches the number of particles
+        assert len(self.colors) == N, "Colors must be specified for each of the partices"
+        assert len(self.labels) == N, "Labels must be specified for each of the partices"
 
         # Position and velocity for the different particles
         self.pos = np.random.uniform(-1.0, 1.0, size = (N, 2)) if pos == None else np.array(pos)
@@ -51,7 +59,6 @@ class nBody:
         # Resetting the COM position and velocity of the system
         self.pos -= np.einsum("i, ij -> j", self.masses, self.pos) / M
         self.vel -= np.einsum("i, ij -> j", self.masses, self.vel) / M
-        
 
     def Euler_cromer(self, a: np.ndarray) -> None:
         """
@@ -99,11 +106,11 @@ class nBody:
 
         self.animate()
 
-    def animate(self, fps: int = 30) -> None:
+    def animate(self) -> None:
         """
         Animation of the N-body system
         """
-        if fps <= 0:
+        if self.fps <= 0:
             raise ValueError("FPS must be a positive integer")
 
         if not np.isfinite(self.particles).all():
@@ -114,18 +121,25 @@ class nBody:
         ax.set_ylim(self.particles[:, :, 1].min() - 1.0, self.particles[:, :, 1].max() + 1.0)
         
         # Use a scatter plot so we can update positions for each particle separately
-        scat = ax.scatter(self.particles[0, :, 0], self.particles[0, :, 1], s = 40, c = self.colors)
-        plt.grid(True)
-        plt.xlabel(r'x (AU)')
-        plt.ylabel(r'y (AU)')
+        scat = ax.scatter(self.particles[0, :, 0], self.particles[0, :, 1], s = 40, c = self.colors, label = (l for l in self.labels))
+        ax.set_xlabel(r"X (AU)")
+        ax.set_ylabel(r"Y (AU)")
+        ax.set_aspect('equal', adjustable = 'box')
+        ax.legend()
+        title = ax.set_title(f'Day: {self.time[0]:.0f}, FPS {self.fps}')
+
+        def init():
+            scat.set_offsets(self.particles[0])
+            title.set_text(f'Day: {self.time[0]:.0f}, FPS {self.fps}')
+            return scat, title
 
         def update(frame):
             scat.set_offsets(self.particles[frame])
-            ax.set_title(f'Day: {self.time[frame]:.0f}, FPS {fps}')
-            return scat,
+            title.set_text(f'Day: {self.time[frame]:.0f}, FPS {self.fps}')
+            return scat, title
 
-        interval_ms = 1000.0 / fps
-        ani = FuncAnimation(fig, update, frames = len(self.time), blit = True, interval = interval_ms)
+        interval_ms = 1000.0 / self.fps
+        self.ani = FuncAnimation(fig, update, init_func = init, frames = len(self.time), blit = False, interval = interval_ms, repeat = True)
         plt.show()
 
 
