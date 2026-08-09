@@ -60,12 +60,16 @@ class nBody:
         self.vel += a * self.dt
         self.pos += self.vel * self.dt
     
-    def run(self) -> None:
+    def run(self, epsilon: float = 1e-5) -> None:
         """
         Main loop for simulation
         """
         # Center the system so the center of mass is at the origin
         self.compute_cm()
+
+        # Storing initial positions
+        self.particles[0] = self.pos
+
         for i in range(len(self.time)):
             # Creating acceleration array
             a = np.zeros((self.N, 2))
@@ -79,7 +83,7 @@ class nBody:
 
             # Computing 1/r^3
             with np.errstate(divide = 'ignore', invalid = 'ignore'):
-                inv_r_cubed = 1.0 / (r_norm * r_norm * r_norm)
+                inv_r_cubed = 1.0 / (r_norm**2 + epsilon**2)**(3/2)  # Adding epsilon to avoid singularity
 
             # Setting diagonal elements to zero
             np.fill_diagonal(inv_r_cubed, 0.0)
@@ -95,16 +99,22 @@ class nBody:
 
         self.animate()
 
-    def animate(self, fps: int = 60) -> None:
+    def animate(self, fps: int = 30) -> None:
         """
         Animation of the N-body system
         """
+        if fps <= 0:
+            raise ValueError("FPS must be a positive integer")
+
+        if not np.isfinite(self.particles).all():
+            raise ValueError("Particles contain non-finite values. Check the simulation parameters.")
+    
         fig, ax = plt.subplots()
         ax.set_xlim(self.particles[:, :, 0].min() - 1.0, self.particles[:, :, 0].max() + 1.0)
         ax.set_ylim(self.particles[:, :, 1].min() - 1.0, self.particles[:, :, 1].max() + 1.0)
         
         # Use a scatter plot so we can update positions for each particle separately
-        scat = ax.scatter([], [], c=self.colors, s=40)
+        scat = ax.scatter(self.particles[0, :, 0], self.particles[0, :, 1], s = 40, c = self.colors)
         plt.grid(True)
         plt.xlabel(r'x (AU)')
         plt.ylabel(r'y (AU)')
