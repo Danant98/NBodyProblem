@@ -4,7 +4,7 @@ __author__ = 'Daniel Elisabethsønn Antonsen, Applied physics and mathematics'
 
 # Importing libraries and modules
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt; plt.style.use('dark_background')
 from matplotlib.animation import FuncAnimation
 import matplotlib.colors as mcolors
 
@@ -119,9 +119,13 @@ class nBody:
         fig, ax = plt.subplots()
         ax.set_xlim(self.particles[:, :, 0].min() - 1.0, self.particles[:, :, 0].max() + 1.0)
         ax.set_ylim(self.particles[:, :, 1].min() - 1.0, self.particles[:, :, 1].max() + 1.0)
-        
+
+        scats = []
         # Use a scatter plot so we can update positions for each particle separately
-        scat = ax.scatter(self.particles[0, :, 0], self.particles[0, :, 1], s = 40, c = self.colors, label = (l for l in self.labels))
+        for i, label in enumerate(self.labels):
+            scat = ax.scatter(self.particles[0, i, 0], self.particles[0, i, 1], s = 40, c = self.colors[i], label = label)
+            scats.append(scat)
+
         ax.set_xlabel(r"X (AU)")
         ax.set_ylabel(r"Y (AU)")
         ax.set_aspect('equal', adjustable = 'box')
@@ -129,12 +133,14 @@ class nBody:
         title = ax.set_title(f'Day: {self.time[0]:.0f}, FPS {self.fps}')
 
         def init():
-            scat.set_offsets(self.particles[0])
+            for i, scat in enumerate(scats):
+                scat.set_offsets(self.particles[0, i])
             title.set_text(f'Day: {self.time[0]:.0f}, FPS {self.fps}')
-            return scat, title
+            return scats, title
 
         def update(frame):
-            scat.set_offsets(self.particles[frame])
+            for i, scat in enumerate(scats):
+                scat.set_offsets(self.particles[frame, i])
             title.set_text(f'Day: {self.time[frame]:.0f}, FPS {self.fps}')
             return scat, title
 

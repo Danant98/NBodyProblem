@@ -12,8 +12,10 @@ if __name__ == '__main__':
                masses = [MS / MS, ME / MS, MJ / MS], 
                pos = [[0.0, 0.0], [1.0, 0.0], [5.2, 0.0]],
                speed = [[0.0, 0.0], [0.0, 0.01720209895], [0.0, 0.007126]],
-               max_t = 365 * 12,
-               fps = 30
+               max_t = 3 * 365,
+               fps = 120,
+               colors = ['yellow', 'blue', 'orange'],
+               labels = ['Sun', 'Earth', 'Jupiter']
                )
     nb.run()
 
