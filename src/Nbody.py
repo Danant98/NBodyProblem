@@ -4,14 +4,14 @@ __author__ = 'Daniel Elisabethsønn Antonsen, Applied physics and mathematics'
 
 # Importing libraries and modules
 import numpy as np
-import matplotlib.pyplot as plt; plt.style.use('dark_background')
+import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import matplotlib.colors as mcolors
 
 class nBody:
 
     def __init__(self, 
-                 N: int, 
+                 N: int,
                  max_t: int = 365, 
                  G: float = 2.9591220828559093e-4,  # AU^3 / (solar_mass * day^2)
                  time_points: int = 1000,
@@ -20,7 +20,9 @@ class nBody:
                  speed: None | list[list[float]] = None,
                  colors: None | list[str] = None,
                  labels: None | list[str] = None,
-                 fps: int = 60
+                 fps: int = 60,
+                 dark_mode: bool = False,
+                 plot_labels: bool = True
                  ) -> None:
         # Number of particles, graviatational constant and total 
         self.N = N
@@ -28,15 +30,18 @@ class nBody:
         self.max_t = max_t
         self.time, self.dt = np.linspace(0, max_t, time_points, retstep = True)
         self.fps = fps
+        self.dark_mode = dark_mode
+        self.plot_labels = plot_labels
 
         # Colors for the different particles and labels for the legend
         diff_cols = [value for key, value in mcolors.TABLEAU_COLORS.items()]
         self.colors = np.random.choice(diff_cols, size = N) if colors == None else colors
-        self.labels = labels if labels != None else [f"Particle {i+1}" for i in range(N)]
+        if plot_labels:
+            self.labels = labels if labels != None else [f"Particle {i+1}" for i in range(N)]
+            assert len(self.labels) == N, "Labels must be specified for each of the partices"
 
         # Checking that the number of colors and labels matches the number of particles
         assert len(self.colors) == N, "Colors must be specified for each of the partices"
-        assert len(self.labels) == N, "Labels must be specified for each of the partices"
 
         # Position and velocity for the different particles
         self.pos = np.random.uniform(-1.0, 1.0, size = (N, 2)) if pos == None else np.array(pos)
@@ -110,6 +115,10 @@ class nBody:
         """
         Animation of the N-body system
         """
+        # Setting dark mode if specified
+        if self.dark_mode:
+            plt.style.use('dark_background')
+
         if self.fps <= 0:
             raise ValueError("FPS must be a positive integer")
 
@@ -122,27 +131,34 @@ class nBody:
 
         scats = []
         # Use a scatter plot so we can update positions for each particle separately
-        for i, label in enumerate(self.labels):
-            scat = ax.scatter(self.particles[0, i, 0], self.particles[0, i, 1], s = 40, c = self.colors[i], label = label)
-            scats.append(scat)
+        if self.plot_labels:
+            for i, label in enumerate(self.labels):
+                scat = ax.scatter(self.particles[0, i, 0], self.particles[0, i, 1], s = 40, c = self.colors[i], label = label)
+                scats.append(scat)
+        else:
+            for i in range(self.N):
+                scat = ax.scatter(self.particles[0, i, 0], self.particles[0, i, 1], s = 40, c = self.colors[i])
+                scats.append(scat)
 
         ax.set_xlabel(r"X (AU)")
         ax.set_ylabel(r"Y (AU)")
         ax.set_aspect('equal', adjustable = 'box')
-        ax.legend()
+        if self.plot_labels:
+            ax.legend()
         title = ax.set_title(f'Day: {self.time[0]:.0f}, FPS {self.fps}')
 
         def init():
             for i, scat in enumerate(scats):
                 scat.set_offsets(self.particles[0, i])
+
             title.set_text(f'Day: {self.time[0]:.0f}, FPS {self.fps}')
             return scats, title
 
         def update(frame):
-            for i, scat in enumerate(scats):
-                scat.set_offsets(self.particles[frame, i])
+            for i in range(self.N):
+                scats[i].set_offsets(self.particles[frame, i])
             title.set_text(f'Day: {self.time[frame]:.0f}, FPS {self.fps}')
-            return scat, title
+            return scats, title
 
         interval_ms = 1000.0 / self.fps
         self.ani = FuncAnimation(fig, update, init_func = init, frames = len(self.time), blit = False, interval = interval_ms, repeat = True)
