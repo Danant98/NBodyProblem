@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import matplotlib.colors as mcolors
-
+from Numerical_methods import numerical as nummet
 class nBody:
 
     def __init__(self, 
@@ -65,14 +65,31 @@ class nBody:
         self.pos -= np.einsum("i, ij -> j", self.masses, self.pos) / M
         self.vel -= np.einsum("i, ij -> j", self.masses, self.vel) / M
 
-    def Euler_cromer(self, a: np.ndarray) -> None:
+
+    def acceleration(self, epsilon: float = 1e-5) -> np.ndarray:
         """
-        Numerical scheme for updating position and velocity
+        Compute acceleration for each particle
         """
-        self.vel += a * self.dt
-        self.pos += self.vel * self.dt
+        # Creating displacement matrix
+        # R_ij = pos_j - pos_i for use in a_i = G * sum_j m_j * R_ij / r^3
+        R_ij = self.pos[np.newaxis, :, :] - self.pos[:, np.newaxis, :]
+
+        # Computing the distance
+        r_norm = np.linalg.norm(R_ij, axis = 2)
+
+        # Computing 1/r^3
+        with np.errstate(divide = 'ignore', invalid = 'ignore'):
+            inv_r_cubed = 1.0 / (r_norm**2 + epsilon**2)**(3/2)  # Adding epsilon to avoid singularity
+
+        # Setting diagonal elements to zero
+        np.fill_diagonal(inv_r_cubed, 0.0)
+        
+        # Computing acceleration array: a_i,k = G * sum_j R_ij,k * inv_r_cubed[i,j] * m_j
+        a = self.G * np.einsum("ijk, ij, j -> ik", R_ij, inv_r_cubed, self.masses)
+        return a
+
     
-    def run(self, epsilon: float = 1e-5) -> None:
+    def run(self) -> None:
         """
         Main loop for simulation
         """
@@ -83,28 +100,11 @@ class nBody:
         self.particles[0] = self.pos
 
         for i in range(len(self.time)):
-            # Creating acceleration array
-            a = np.zeros((self.N, 2))
-
-            # Creating displacement matrix
-            # R_ij = pos_j - pos_i for use in a_i = G * sum_j m_j * R_ij / r^3
-            R_ij = self.pos[np.newaxis, :, :] - self.pos[:, np.newaxis, :]
-
-            # Computing the distance
-            r_norm = np.linalg.norm(R_ij, axis = 2)
-
-            # Computing 1/r^3
-            with np.errstate(divide = 'ignore', invalid = 'ignore'):
-                inv_r_cubed = 1.0 / (r_norm**2 + epsilon**2)**(3/2)  # Adding epsilon to avoid singularity
-
-            # Setting diagonal elements to zero
-            np.fill_diagonal(inv_r_cubed, 0.0)
-            
-            # Computing acceleration array: a_i,k = G * sum_j R_ij,k * inv_r_cubed[i,j] * m_j
-            a[:] = self.G * np.einsum("ijk, ij, j -> ik", R_ij, inv_r_cubed, self.masses)
+            # Computing acceleration
+            a = self.acceleration()
 
             # Computing velocity and position
-            self.Euler_cromer(a)
+            self.vel, self.pos = nummet.euler_cromer(pos = self.pos, vel = self.vel, acc = a, dt = self.dt)
 
             # Storing position
             self.particles[i] = self.pos
