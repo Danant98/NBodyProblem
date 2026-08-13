@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import matplotlib.colors as mcolors
-from Numerical_methods import numerical as nummet
+
 class nBody:
 
     def __init__(self, 
@@ -22,7 +22,8 @@ class nBody:
                  labels: None | list[str] = None,
                  fps: int = 60,
                  dark_mode: bool = False,
-                 plot_labels: bool = True
+                 plot_labels: bool = True,
+                 integrator: str = "euler-cromer"
                  ) -> None:
         # Number of particles, graviatational constant and total 
         self.N = N
@@ -32,6 +33,10 @@ class nBody:
         self.fps = fps
         self.dark_mode = dark_mode
         self.plot_labels = plot_labels
+
+        # Setting the integrator for the simulation
+        self.integrator = integrator
+        assert self.integrator in ["euler-cromer", "verlet"], "Integrator must be either 'euler-cromer' or 'verlet'"
 
         # Colors for the different particles and labels for the legend
         diff_cols = [value for key, value in mcolors.TABLEAU_COLORS.items()]
@@ -64,8 +69,21 @@ class nBody:
         # Resetting the COM position and velocity of the system
         self.pos -= np.einsum("i, ij -> j", self.masses, self.pos) / M
         self.vel -= np.einsum("i, ij -> j", self.masses, self.vel) / M
+    
+    def numerical_integrator(self, a: np.ndarray) -> None:
+        """
+        Numerical integrator for updating position and velocity
+        """
+        if self.integrator == "euler-cromer":
+            self.vel += a * self.dt
+            self.pos += self.vel * self.dt
+        elif self.integrator == "verlet":
+            self.pos += self.vel * self.dt + 0.5 * a * self.dt**2
+            # Compute new acceleration
+            a_new = self.acceleration()
+            self.vel += 0.5 * (a + a_new) * self.dt
 
-
+    
     def acceleration(self, epsilon: float = 1e-5) -> np.ndarray:
         """
         Compute acceleration for each particle
@@ -104,7 +122,7 @@ class nBody:
             a = self.acceleration()
 
             # Computing velocity and position
-            self.vel, self.pos = nummet.euler_cromer(pos = self.pos, vel = self.vel, acc = a, dt = self.dt)
+            self.numerical_integrator(a)
 
             # Storing position
             self.particles[i] = self.pos

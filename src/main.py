@@ -17,9 +17,9 @@ if __name__ == '__main__':
                fps = 60,
                colors = ['yellow', 'blue', 'orange', 'red'],
                labels = ['Sun', 'Earth', 'Jupiter', 'Mars'],
-               dark_mode = True
+               dark_mode = True,
+               integrator = "verlet"
                )
-    
     nb.run()
 
 
