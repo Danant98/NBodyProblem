@@ -9,16 +9,18 @@ if __name__ == '__main__':
     MJ = 1.898E27 # Mass of Jupiter in kg
     MM = 6.39E23 # Mass of Mars in kg
 
-    nb = nBody(4, 
+    nb = nBody(4,
                masses = [MS / MS, ME / MS, MJ / MS, MM / MS], 
                pos = [[0.0, 0.0], [1.0, 0.0], [5.2, 0.0], [1.524, 0.0]],
                speed = [[0.0, 0.0], [0.0, 0.01720209895], [0.0, 0.007544], [0.0, 0.013934]],
-               max_t = 3 * 365,
-               fps = 60,
+               max_t = int((3 / 2) * 365),
+               fps = 30,
                colors = ['yellow', 'blue', 'orange', 'red'],
                labels = ['Sun', 'Earth', 'Jupiter', 'Mars'],
                dark_mode = True,
-               integrator = "verlet"
+               integrator = "verlet",
+               save_animation = True,
+               save_path = '4body'
                )
     nb.run()
 

@@ -23,7 +23,9 @@ class nBody:
                  fps: int = 60,
                  dark_mode: bool = False,
                  plot_labels: bool = True,
-                 integrator: str = "euler-cromer"
+                 integrator: str = "euler-cromer",
+                 save_animation: bool = False,
+                 save_path: None | str = None
                  ) -> None:
         # Number of particles, graviatational constant and total 
         self.N = N
@@ -33,6 +35,11 @@ class nBody:
         self.fps = fps
         self.dark_mode = dark_mode
         self.plot_labels = plot_labels
+
+        self.save_animation = save_animation
+        self.save_path = save_path
+        if save_animation == True and save_path is None:
+            raise ValueError("To save animation ")
 
         # Setting the integrator for the simulation
         self.integrator = integrator
@@ -163,23 +170,27 @@ class nBody:
         ax.set_aspect('equal', adjustable = 'box')
         if self.plot_labels:
             ax.legend()
-        title = ax.set_title(f'Day: {self.time[0]:.0f}, FPS {self.fps}')
+        title = ax.set_title(f'Year {self.time[0] // 365:.0f}, Day: {self.time[0] % 365:.0f}, FPS {self.fps}')
 
         def init():
             for i, scat in enumerate(scats):
                 scat.set_offsets(self.particles[0, i])
 
-            title.set_text(f'Day: {self.time[0]:.0f}, FPS {self.fps}')
+            title.set_text(f'Year {self.time[0] // 365:.0f}, Day: {self.time[0] % 365:.0f}, FPS {self.fps}')
             return scats, title
 
         def update(frame):
             for i in range(self.N):
                 scats[i].set_offsets(self.particles[frame, i])
-            title.set_text(f'Day: {self.time[frame]:.0f}, FPS {self.fps}')
+            title.set_text(f'Year {self.time[frame] // 365:.0f}, Day: {self.time[frame] % 365:.0f}, FPS {self.fps}')
             return scats, title
 
         interval_ms = 1000.0 / self.fps
         self.ani = FuncAnimation(fig, update, init_func = init, frames = len(self.time), blit = False, interval = interval_ms, repeat = True)
+
+        if self.save_animation:
+            self.ani.save(f'{self.save_path}.gif', writer = "pillow", fps = self.fps)
+
         plt.show()
 
 
