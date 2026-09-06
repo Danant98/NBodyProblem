@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "nbody-simulation"
+version = "0.1.0"
+description = "A gravitational N-body simulation package"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "numpy",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+numba = [
+    "numba",
+]
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
