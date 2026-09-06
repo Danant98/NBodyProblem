@@ -19,7 +19,7 @@ if __name__ == '__main__':
                labels = ['Sun', 'Earth', 'Jupiter', 'Mars'],
                dark_mode = True,
                integrator = "verlet",
-               save_animation = True,
+               save_animation = False,
                save_path = '4body'
                )
     nb.run()

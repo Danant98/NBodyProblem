@@ -149,6 +149,19 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
+# Numba cache
+*.nbc
+*.nbi
+
+# N-body simulation output
+output/
+results/
+animations/
+
+# Generated media
+*.mp4
+*.gif
+
 # Cython debug symbols
 cython_debug/
 
